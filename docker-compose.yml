@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  booking_db:
+    image: postgres:16-alpine
+    container_name: booking_postgres_container
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: my_secret_password_123
+      POSTGRES_DB: booking_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

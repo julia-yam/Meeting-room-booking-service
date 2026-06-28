@@ -1,7 +1,6 @@
 import asyncio
 from src.models.base import Base
 from src.models.database import engine
-import src.models as models  
 
 async def create_tables():
     async with engine.begin() as conn:

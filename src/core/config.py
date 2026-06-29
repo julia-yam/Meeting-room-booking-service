@@ -1,11 +1,17 @@
-import os
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-class Settings:
-    DB_USER: str = os.getenv("DB_USER", "postgres")
-    DB_PASS: str = os.getenv("DB_PASS", "my_secret_password_123")
-    DB_HOST: str = os.getenv("DB_HOST", "localhost")
-    DB_PORT: str = os.getenv("DB_PORT", "5432")
-    DB_NAME: str = os.getenv("DB_NAME", "booking_db")
+class Settings(BaseSettings):
+    DB_USER: str
+    DB_PASS: str
+    DB_HOST: str
+    DB_PORT: str
+    DB_NAME: str
+
+    SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @property
     def DATABASE_URL_ASYNC(self) -> str:

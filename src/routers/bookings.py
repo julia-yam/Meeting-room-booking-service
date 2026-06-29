@@ -1,3 +1,4 @@
+import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +13,7 @@ router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
 class BookingCreateSchema(BaseModel):
     slot_id: int
+    date: datetime.date
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_booking(
@@ -39,7 +41,8 @@ async def create_booking(
 
     new_booking = Booking(
         user_id=current_user.id,
-        slot_id=slot.id
+        slot_id=slot.id,
+        date=booking_data.date 
     )
     
     db.add(new_booking)

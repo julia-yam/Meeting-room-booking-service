@@ -1,3 +1,4 @@
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -52,22 +53,21 @@ async def register(
     return {"message": "Пользователь успешно зарегистрирован", "user_id": new_user.id}
 
 
-@router.post("/login", response_model=TokenSchema)
+@router.post("/login")
 async def login(
-    credentials: UserLoginSchema, 
+    form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_async_session)
 ):
-    query = select(User).where(User.email == credentials.email)
+    query = select(User).where(User.email == form_data.username)
     result = await db.execute(query)
     user = result.scalar_one_or_none()
 
-    if not user or not verify_password(credentials.password, user.password_hash):
+    if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверный email или пароль",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    token = create_access_token(user_id=user.id)
-    
-    return {"access_token": token, "token_type": "bearer"}
+
+    access_token = create_access_token(user_id=user.id)
+    return {"access_token": access_token, "token_type": "bearer"}

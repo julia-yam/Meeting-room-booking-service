@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from src.routers.auth import router as auth_router
-from src.routers.rooms import router as rooms_router  # Добавили импорт
+from src.routers.rooms import router as rooms_router 
+from src.routers.bookings import router as bookings_router
 
 app = FastAPI(
     title="Booking API",
@@ -10,6 +11,7 @@ app = FastAPI(
 
 app.include_router(auth_router)
 app.include_router(rooms_router)
+app.include_router(bookings_router)
 
 @app.get("/")
 def read_root():

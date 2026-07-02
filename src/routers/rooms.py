@@ -114,7 +114,7 @@ async def get_available_slots(
     room_id: int,
     db: AsyncSession = Depends(get_async_session)
 ):
-    query = select(Slot).where(Slot.room_id == room_id, Slot.is_booked == False)
+    query = select(Slot).where(Slot.room_id == room_id, Slot.is_booked.is_(False))
     result = await db.execute(query)
     slots = result.scalars().all()
     return slots

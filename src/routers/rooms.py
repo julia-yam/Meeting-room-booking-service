@@ -1,10 +1,11 @@
-from datetime import datetime
+import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 
-from src.models import Room, User, Slot
+from src.models import Room, User, Slot, Booking
 from src.models.database import get_async_session
 from src.routers.dependencies import get_current_user
 
@@ -16,8 +17,8 @@ class RoomCreateSchema(BaseModel):
 
 class SlotCreateSchema(BaseModel):
     room_id: int
-    start_time: datetime
-    end_time: datetime
+    start_time: datetime.time
+    end_time: datetime.time
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_room(
@@ -44,7 +45,6 @@ async def create_room(
     await db.refresh(new_room)
     
     return new_room
-
 
 @router.get("/")
 async def get_rooms(db: AsyncSession = Depends(get_async_session)):
@@ -81,13 +81,40 @@ async def create_slot(
 
     return new_slot
 
+@router.get("/available")
+async def get_available_rooms(
+    date: datetime.date,
+    db: AsyncSession = Depends(get_async_session),
+    current_user: User = Depends(get_current_user)
+):
+    rooms_query = select(Room).options(selectinload(Room.slots))
+    rooms_result = await db.execute(rooms_query)
+    rooms = rooms_result.scalars().all()
+
+    bookings_query = select(Booking.slot_id).where(Booking.date == date)
+    bookings_result = await db.execute(bookings_query)
+    booked_slot_ids = bookings_result.scalars().all()
+
+    available_rooms = []
+    for room in rooms:
+        free_slots = [slot for slot in room.slots if slot.id not in booked_slot_ids]
+        
+        if free_slots:
+            available_rooms.append({
+                "id": room.id,
+                "name": room.name,
+                "description": room.description,
+                "free_slots": free_slots
+            })
+
+    return available_rooms
 
 @router.get("/{room_id}/slots")
 async def get_available_slots(
     room_id: int,
     db: AsyncSession = Depends(get_async_session)
 ):
-    query = select(Slot).where(Slot.room_id == room_id, not Slot.is_booked)
+    query = select(Slot).where(Slot.room_id == room_id, Slot.is_booked == False)
     result = await db.execute(query)
     slots = result.scalars().all()
     return slots
